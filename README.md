@@ -2,8 +2,8 @@
 
 ## Integrantes
 
-- Arthur Ferreira
-- Integrante 2: preencher com o nome da dupla
+- Arthur Ferreira de Melo
+- Pedro Roberto Lemos
 
 ## Descrição
 
