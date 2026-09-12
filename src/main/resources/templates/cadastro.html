@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Novo filósofo | Atlas da Filosofia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" th:href="@{/}" aria-label="Atlas da Filosofia - início"><span class="brand-mark">A</span><span>Atlas da<br /><strong>Filosofia</strong></span></a>
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a class="nav-link" href="/" th:href="@{/}"><span class="nav-icon">⌂</span> Visão geral</a>
+        <a class="nav-link active" href="/filosofos" th:href="@{/filosofos}"><span class="nav-icon">◉</span> Filósofos</a>
+        <a class="nav-link" href="/escolas" th:href="@{/escolas}"><span class="nav-icon">◇</span> Escolas de pensamento</a>
+        <a class="nav-link" href="/periodos" th:href="@{/periodos}"><span class="nav-icon">◷</span> Períodos históricos</a>
+      </nav>
+      <div class="sidebar-footer"><div class="quote-mark">“</div><p>Uma vida sem reflexão não vale a pena ser vivida.</p><span>— Sócrates</span></div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar"><div class="breadcrumb">Biblioteca <span>/</span> Cadastro</div><div class="topbar-actions"><button class="icon-button" aria-label="Notificações" title="Notificações">♧<span class="notification-dot"></span></button><div class="avatar">VF</div></div></header>
+      <section class="page-intro"><p class="eyebrow">FORMULÁRIO</p><h1>Adicionar<br /><em>filósofo.</em></h1><p>Os dados preenchidos aqui são enviados por POST para o Controller e guardados em memória durante a execução.</p></section>
+      <section class="form-panel">
+        <form action="/filosofos" th:action="@{/filosofos}" th:object="${philosopher}" method="post">
+          <label>Nome<input th:field="*{name}" required placeholder="Ex.: Hannah Arendt" /></label>
+          <div class="form-row">
+            <label>Período<select th:field="*{period}" required><option value="Antiguidade">Antiguidade</option><option value="Medieval">Medieval</option><option value="Modernidade">Modernidade</option><option value="Contemporânea">Contemporânea</option></select></label>
+            <label>Escola<input th:field="*{school}" required placeholder="Ex.: Existencialismo" /></label>
+          </div>
+          <div class="form-row">
+            <label>Anos de vida<input th:field="*{years}" placeholder="Ex.: 1906 - 1975" /></label>
+            <label>Cor visual<select th:field="*{color}"><option value="">Dourado</option><option value="blue">Azul</option><option value="green">Verde</option><option value="rose">Rosa</option><option value="lilac">Lilás</option><option value="terracotta">Terracota</option></select></label>
+          </div>
+          <label>Frase ou ideia principal<textarea th:field="*{quote}" required rows="3" placeholder="Uma frase marcante ou breve descrição..."></textarea></label>
+          <label>Resumo do perfil<textarea th:field="*{biography}" rows="4" placeholder="Contexto histórico, contribuição ou tema central..."></textarea></label>
+          <div class="form-actions"><a class="secondary-button" href="/filosofos" th:href="@{/filosofos}">Cancelar</a><button type="submit" class="primary-button">Salvar filósofo</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

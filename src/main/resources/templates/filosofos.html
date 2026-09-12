@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filósofos | Atlas da Filosofia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" th:href="@{/}" aria-label="Atlas da Filosofia - início"><span class="brand-mark">A</span><span>Atlas da<br /><strong>Filosofia</strong></span></a>
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a class="nav-link" href="/" th:href="@{/}"><span class="nav-icon">⌂</span> Visão geral</a>
+        <a class="nav-link active" href="/filosofos" th:href="@{/filosofos}"><span class="nav-icon">◉</span> Filósofos</a>
+        <a class="nav-link" href="/escolas" th:href="@{/escolas}"><span class="nav-icon">◇</span> Escolas de pensamento</a>
+        <a class="nav-link" href="/periodos" th:href="@{/periodos}"><span class="nav-icon">◷</span> Períodos históricos</a>
+      </nav>
+      <div class="sidebar-footer"><div class="quote-mark">“</div><p>Uma vida sem reflexão não vale a pena ser vivida.</p><span>— Sócrates</span></div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar"><div class="breadcrumb">Biblioteca <span>/</span> Filósofos</div><div class="topbar-actions"><button class="icon-button" aria-label="Notificações" title="Notificações">♧<span class="notification-dot"></span></button><div class="avatar">VF</div></div></header>
+      <section class="page-intro"><p class="eyebrow">LISTAGEM</p><h1>Acervo de<br /><em>pensadores.</em></h1><p>Esta tela recebe a lista de filósofos pelo Controller e renderiza cada registro com Thymeleaf.</p></section>
+      <p class="flash-message" th:if="${message}" th:text="${message}">Filósofo adicionado ao atlas.</p>
+      <section class="content-section">
+        <div class="section-heading">
+          <div><p class="eyebrow">BIBLIOTECA</p><h2 th:text="${philosopherCount + ' registros encontrados'}">6 registros encontrados</h2></div>
+          <a class="primary-button" href="/filosofos/novo" th:href="@{/filosofos/novo}"><span>＋</span> Novo registro</a>
+        </div>
+        <div class="toolbar">
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Buscar por nome ou escola..." /></label>
+          <div class="filter-pills" role="group" aria-label="Filtrar por período">
+            <button class="filter-pill selected" data-period="Todos">Todos</button>
+            <button class="filter-pill" data-period="Antiguidade">Antiguidade</button>
+            <button class="filter-pill" data-period="Modernidade">Modernidade</button>
+            <button class="filter-pill" data-period="Contemporânea">Contemporânea</button>
+          </div>
+        </div>
+        <div class="philosopher-grid" id="philosopher-grid">
+          <article class="philosopher-card" th:each="philosopher : ${philosophers}" th:attr="data-period=${philosopher.period},data-search=${#strings.toLowerCase(philosopher.name + ' ' + philosopher.school + ' ' + philosopher.quote)}">
+            <div class="card-top"><div class="portrait" th:classappend="${philosopher.color}" th:text="${philosopher.initials}">S</div><span class="period-tag" th:text="${philosopher.period}">Antiguidade</span></div>
+            <h3 th:text="${philosopher.name}">Sócrates</h3>
+            <span class="school" th:text="${philosopher.school}">Filosofia clássica</span>
+            <p class="quote" th:text="'“' + ${philosopher.quote} + '”'">“Só sei que nada sei.”</p>
+            <a class="detail-link" href="/filosofos/1" th:href="@{/filosofos/{id}(id=${philosopher.id})}">Ver perfil completo <span>→</span></a>
+          </article>
+        </div>
+        <p class="empty-state hidden" id="empty-state">Nenhum filósofo encontrado. Tente outra busca.</p>
+      </section>
+    </main>
+  </div>
+  <script src="/js/script.js" th:src="@{/js/script.js}"></script>
+</body>
+</html>

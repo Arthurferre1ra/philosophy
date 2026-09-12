@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title th:text="${philosopher.name + ' | Atlas da Filosofia'}">Perfil | Atlas da Filosofia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" th:href="@{/}" aria-label="Atlas da Filosofia - início"><span class="brand-mark">A</span><span>Atlas da<br /><strong>Filosofia</strong></span></a>
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a class="nav-link" href="/" th:href="@{/}"><span class="nav-icon">⌂</span> Visão geral</a>
+        <a class="nav-link active" href="/filosofos" th:href="@{/filosofos}"><span class="nav-icon">◉</span> Filósofos</a>
+        <a class="nav-link" href="/escolas" th:href="@{/escolas}"><span class="nav-icon">◇</span> Escolas de pensamento</a>
+        <a class="nav-link" href="/periodos" th:href="@{/periodos}"><span class="nav-icon">◷</span> Períodos históricos</a>
+      </nav>
+      <div class="sidebar-footer"><div class="quote-mark">“</div><p>Uma vida sem reflexão não vale a pena ser vivida.</p><span>— Sócrates</span></div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar"><div class="breadcrumb">Biblioteca <span>/</span> Detalhes</div><div class="topbar-actions"><button class="icon-button" aria-label="Notificações" title="Notificações">♧<span class="notification-dot"></span></button><div class="avatar">VF</div></div></header>
+      <section class="detail-page">
+        <div class="portrait large" th:classappend="${philosopher.color}" th:text="${philosopher.initials}">S</div>
+        <p class="eyebrow">PERFIL DO FILÓSOFO</p>
+        <h1 th:text="${philosopher.name}">Sócrates</h1>
+        <p class="detail-quote" th:text="'“' + ${philosopher.quote} + '”'">“Só sei que nada sei.”</p>
+        <p class="detail-biography" th:text="${philosopher.biography}">Resumo do perfil.</p>
+        <div class="detail-meta">
+          <div>Período<strong th:text="${philosopher.period}">Antiguidade</strong></div>
+          <div>Vida<strong th:text="${philosopher.years}">470 - 399 a.C.</strong></div>
+          <div>Escola<strong th:text="${philosopher.school}">Filosofia clássica</strong></div>
+        </div>
+        <a class="page-back" href="/filosofos" th:href="@{/filosofos}">← Voltar para a listagem</a>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
