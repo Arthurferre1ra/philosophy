@@ -1,5 +1,7 @@
 package com.philosophy.philosophy.model;
 
+import java.util.Locale;
+
 public class Philosopher {
 
     private Long id;
@@ -33,9 +35,9 @@ public class Philosopher {
         }
         String[] parts = name.trim().split("\\s+");
         if (parts.length == 1) {
-            return parts[0].substring(0, 1).toUpperCase();
+            return parts[0].substring(0, 1).toUpperCase(Locale.ROOT);
         }
-        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
+        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase(Locale.ROOT);
     }
 
     public Long getId() {
