@@ -93,7 +93,7 @@
             <h3 th:text="${philosopher.name}">Sócrates</h3>
             <span class="school" th:text="${philosopher.school}">Filosofia clássica</span>
             <p class="quote" th:text="'“' + ${philosopher.quote} + '”'">“Só sei que nada sei.”</p>
-            <a class="detail-link" href="/filosofos/1" th:href="@{/filosofos/{id}(id=${philosopher.id})}">Ver perfil completo <span>→</span></a>
+            <a class="detail-link" href="/filosofos" th:href="@{/filosofos/{id}(id=${philosopher.id})}">Ver perfil completo <span>→</span></a>
           </article>
         </div>
         <p class="empty-state hidden" id="empty-state">Nenhum filósofo encontrado. Tente outra busca.</p>

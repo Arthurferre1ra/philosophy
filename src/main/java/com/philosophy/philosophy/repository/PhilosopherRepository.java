@@ -1,68 +1,51 @@
 package com.philosophy.philosophy.repository;
 
 import com.philosophy.philosophy.dto.PhilosopherForm;
+import com.philosophy.philosophy.model.Period;
 import com.philosophy.philosophy.model.Philosopher;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import com.philosophy.philosophy.model.School;
+import jakarta.persistence.EntityManager;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
 @Repository
+@RequiredArgsConstructor
 public class PhilosopherRepository {
-    // A agregação correlacionada mantém uma linha por filósofo, sem GROUP BY no perfil inteiro.
     private static final String SELECT = """
-            SELECT f.id, f.nome, f.data_nascimento, f.data_falecimento,
-                   f.biografia, f.principais_ideias, f.anos_vida, f.cor,
-                   COALESCE(p.nome, 'Sem período') AS periodo,
-                   COALESCE((
-                       SELECT STRING_AGG(e.nome, ', ' ORDER BY e.nome)
-                       FROM filosofo_escola fe
-                       JOIN escola_pensamento e ON e.id = fe.escola_id
-                       WHERE fe.filosofo_id = f.id
-                   ), 'Sem escola') AS escola
-            FROM filosofo f
-            LEFT JOIN periodo_historico p ON p.id = f.periodo_id
+            SELECT DISTINCT f FROM Philosopher f
+            LEFT JOIN FETCH f.period
+            LEFT JOIN FETCH f.schools
             """;
 
-    private final NamedParameterJdbcTemplate jdbc;
+    private final EntityManager entityManager;
 
-    public PhilosopherRepository(NamedParameterJdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public List<com.philosophy.philosophy.dto.Philosopher> findAll() {
+        return entityManager.createQuery(SELECT + " ORDER BY f.createdAt DESC, f.id DESC", Philosopher.class)
+                .getResultList().stream().map(LibraryMapper::philosopher).toList();
     }
 
-    public List<Philosopher> findAll() {
-        return jdbc.query(SELECT + " ORDER BY f.criado_em DESC, f.id DESC", LibraryRowMapper::philosopher);
+    public Optional<com.philosophy.philosophy.dto.Philosopher> findById(UUID id) {
+        return entityManager.createQuery(SELECT + " WHERE f.id = :id", Philosopher.class)
+                .setParameter("id", id).getResultList().stream().findFirst().map(LibraryMapper::philosopher);
     }
 
-    public Optional<Philosopher> findById(long id) {
-        return jdbc.query(SELECT + " WHERE f.id = :id", Map.of("id", id), LibraryRowMapper::philosopher)
-                .stream().findFirst();
+    public UUID insert(PhilosopherForm form, UUID periodId) {
+        var philosopher = new Philosopher();
+        philosopher.setName(form.name());
+        philosopher.setBiography(form.biography());
+        philosopher.setQuote(form.quote());
+        philosopher.setPeriod(entityManager.getReference(Period.class, periodId));
+        philosopher.setYears(form.years());
+        philosopher.setColor(form.color() == null ? "" : form.color());
+        entityManager.persist(philosopher);
+        return philosopher.getId();
     }
 
-    public long insert(PhilosopherForm form, long periodId) {
-        var parameters = new MapSqlParameterSource()
-                .addValue("name", form.name())
-                .addValue("biography", form.biography())
-                .addValue("quote", form.quote())
-                .addValue("periodId", periodId)
-                .addValue("years", form.years())
-                .addValue("color", form.color() == null ? "" : form.color());
-        return Objects.requireNonNull(jdbc.queryForObject("""
-                INSERT INTO filosofo (nome, biografia, principais_ideias, periodo_id, anos_vida, cor)
-                VALUES (:name, :biography, :quote, :periodId, :years, :color)
-                RETURNING id
-                """, parameters, Long.class));
-    }
-
-    public void associateSchool(long philosopherId, long schoolId) {
-        jdbc.update("""
-                INSERT INTO filosofo_escola (filosofo_id, escola_id)
-                VALUES (:philosopherId, :schoolId)
-                ON CONFLICT (filosofo_id, escola_id) DO NOTHING
-                """, Map.of("philosopherId", philosopherId, "schoolId", schoolId));
+    public void associateSchool(UUID philosopherId, UUID schoolId) {
+        var philosopher = entityManager.getReference(Philosopher.class, philosopherId);
+        philosopher.getSchools().add(entityManager.getReference(School.class, schoolId));
     }
 }

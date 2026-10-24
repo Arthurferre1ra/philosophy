@@ -4,7 +4,8 @@ import com.philosophy.philosophy.dto.PhilosopherForm;
 import com.philosophy.philosophy.service.PhilosophyLibraryService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,13 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
+@RequiredArgsConstructor
 @RequestMapping("/filosofos")
 public class PhilosopherController {
     private final PhilosophyLibraryService libraryService;
-
-    public PhilosopherController(PhilosophyLibraryService libraryService) {
-        this.libraryService = libraryService;
-    }
 
     @ModelAttribute("activePage")
     public String activePage() {
@@ -57,7 +55,7 @@ public class PhilosopherController {
     }
 
     @GetMapping("/{id}")
-    public String details(@PathVariable("id") @Positive long id, Model model) {
+    public String details(@PathVariable("id") UUID id, Model model) {
         model.addAttribute("philosopher", libraryService.findPhilosopher(id));
         return "detalhes";
     }

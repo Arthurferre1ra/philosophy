@@ -32,7 +32,7 @@
           </div>
           <label>Nome<input th:field="*{name}" maxlength="150" required placeholder="Ex.: Hannah Arendt" /></label>
           <div class="form-row">
-            <label>Período<select th:field="*{period}" required><option value="">Selecione um período</option><option th:each="period : ${periods}" th:value="${period.name}" th:text="${period.name}"></option></select></label>
+            <label>Período<input th:field="*{period}" list="period-options" maxlength="100" required placeholder="Selecione ou informe um período" /><datalist id="period-options"><option th:each="period : ${periods}" th:value="${period.name}"></option></datalist></label>
             <label>Escola<input th:field="*{school}" maxlength="150" required placeholder="Ex.: Existencialismo" /></label>
           </div>
           <div class="form-row">

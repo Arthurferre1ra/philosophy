@@ -1,17 +1,15 @@
 package com.philosophy.philosophy.controller;
 
 import com.philosophy.philosophy.service.PhilosophyLibraryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
+@RequiredArgsConstructor
 public class HomeController {
     private final PhilosophyLibraryService libraryService;
-
-    public HomeController(PhilosophyLibraryService libraryService) {
-        this.libraryService = libraryService;
-    }
 
     @GetMapping("/")
     public String index(Model model) {

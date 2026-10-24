@@ -2,6 +2,7 @@ package com.philosophy.philosophy.repository;
 
 import com.philosophy.philosophy.dto.PhilosopherForm;
 import com.philosophy.philosophy.service.PhilosophyLibraryService;
+import jakarta.persistence.EntityManagerFactory;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +14,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
@@ -59,6 +62,7 @@ class PostgresPersistenceTests {
         var form = form("D'Ávila", "Período de teste", "Escola de teste");
         var saved = service.addPhilosopher(form);
         var loaded = service.findPhilosopher(saved.getId());
+        assertThat(loaded.getId().version()).isEqualTo(4);
         assertThat(loaded.getName()).isEqualTo(form.name());
         assertThat(loaded.getYears()).isEqualTo(form.years());
         assertThat(loaded.getColor()).isEqualTo(form.color());
@@ -71,6 +75,56 @@ class PostgresPersistenceTests {
         assertThat(migrations().migrate().migrationsExecuted).isZero();
         assertThat(jdbc.queryForObject("SELECT descricao FROM periodo_historico WHERE nome = 'Antiguidade'", String.class))
                 .isEqualTo("Edição preservada");
+    }
+
+    @Test
+    void uuidMigrationPreservesLegacyDataRelationshipsAndConstraints() {
+        String legacySchema = schema + "_legacy";
+        admin.execute("CREATE SCHEMA " + legacySchema);
+        try {
+            var legacySource = dataSource(legacySchema);
+            Flyway.configure().dataSource(legacySource).defaultSchema(legacySchema)
+                    .locations("classpath:db/migration").target("3").load().migrate();
+            var jdbc = new JdbcTemplate(legacySource);
+            jdbc.update("INSERT INTO filosofo (nome, biografia, anos_vida, cor) VALUES ('Sem vínculos', 'Biografia legada', '1900 - 1980', 'rose')");
+            String profiles = """
+                    SELECT f.nome, f.biografia, f.anos_vida, f.cor, p.nome AS periodo, e.nome AS escola
+                    FROM filosofo f
+                    LEFT JOIN periodo_historico p ON p.id = f.periodo_id
+                    LEFT JOIN filosofo_escola fe ON fe.filosofo_id = f.id
+                    LEFT JOIN escola_pensamento e ON e.id = fe.escola_id
+                    ORDER BY f.nome, e.nome
+                    """;
+            var before = jdbc.queryForList(profiles);
+            Flyway.configure().dataSource(legacySource).defaultSchema(legacySchema)
+                    .locations("classpath:db/migration").load().migrate();
+            assertThat(jdbc.queryForList(profiles)).isEqualTo(before);
+            assertThat(jdbc.queryForList("""
+                    SELECT data_type FROM information_schema.columns
+                    WHERE table_schema = ? AND column_name IN ('id', 'periodo_id', 'filosofo_id', 'escola_id')
+                      AND table_name IN ('filosofo', 'periodo_historico', 'escola_pensamento', 'filosofo_escola')
+                    """, String.class, legacySchema)).hasSize(6).containsOnly("uuid");
+            assertThat(jdbc.queryForList("SELECT id FROM filosofo", UUID.class))
+                    .hasSize(7).doesNotHaveDuplicates().allSatisfy(id -> assertThat(id.version()).isEqualTo(4));
+            assertThat(jdbc.queryForObject("INSERT INTO periodo_historico (nome) VALUES ('Novo período UUID') RETURNING id", UUID.class))
+                    .isNotNull();
+            UUID philosopherId = jdbc.queryForObject("SELECT id FROM filosofo WHERE nome = 'Sócrates'", UUID.class);
+            assertThatThrownBy(() -> jdbc.update("INSERT INTO filosofo_escola (filosofo_id, escola_id) VALUES (?, ?)",
+                    philosopherId, UUID.randomUUID())).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+            assertThatThrownBy(() -> jdbc.update("INSERT INTO filosofo_escola SELECT * FROM filosofo_escola LIMIT 1"))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+            jdbc.update("DELETE FROM periodo_historico WHERE nome = 'Antiguidade'");
+            assertThat(jdbc.queryForObject("SELECT periodo_id FROM filosofo WHERE id = ?", UUID.class, philosopherId)).isNull();
+            jdbc.update("DELETE FROM filosofo WHERE id = ?", philosopherId);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM filosofo_escola WHERE filosofo_id = ?", Long.class, philosopherId)).isZero();
+            UUID schoolId = jdbc.queryForObject("SELECT id FROM escola_pensamento WHERE nome = 'Idealismo'", UUID.class);
+            jdbc.update("DELETE FROM escola_pensamento WHERE id = ?", schoolId);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM filosofo_escola WHERE escola_id = ?", Long.class, schoolId)).isZero();
+            assertThat(jdbc.queryForList("SELECT indexname FROM pg_indexes WHERE schemaname = ?", String.class, legacySchema))
+                    .contains("idx_filosofo_periodo", "idx_filosofo_escola_escola", "idx_filosofo_criado_id");
+        } finally {
+            admin.execute("DROP SCHEMA " + legacySchema + " CASCADE");
+        }
     }
 
     @Test
@@ -88,7 +142,7 @@ class PostgresPersistenceTests {
     @Test
     void databaseFailureRollsBackCatalogsAndPhilosopher() {
         var jdbc = new JdbcTemplate(dataSource);
-        jdbc.execute("ALTER TABLE filosofo_escola ADD CONSTRAINT reject_test_link CHECK (escola_id < 0) NOT VALID");
+        jdbc.execute("ALTER TABLE filosofo_escola ADD CONSTRAINT reject_test_link CHECK (false) NOT VALID");
         assertThatThrownBy(() -> service.addPhilosopher(form("Falha", "Período rollback", "Escola rollback")))
                 .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM filosofo WHERE nome = 'Falha'", Long.class)).isZero();
@@ -122,7 +176,23 @@ class PostgresPersistenceTests {
     @Import({PhilosopherRepository.class, SchoolRepository.class, PeriodRepository.class, PhilosophyLibraryService.class})
     static class PersistenceConfiguration {
         @Bean NamedParameterJdbcTemplate jdbc(DataSource ds) { return new NamedParameterJdbcTemplate(ds); }
-        @Bean DataSourceTransactionManager transactionManager(DataSource ds) { return new DataSourceTransactionManager(ds); }
+        @Bean LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource ds) {
+            var factory = new LocalContainerEntityManagerFactoryBean();
+            factory.setDataSource(ds);
+            factory.setPackagesToScan("com.philosophy.philosophy.model");
+            factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+            factory.setJpaPropertyMap(java.util.Map.of("hibernate.hbm2ddl.auto", "validate"));
+            return factory;
+        }
+        @Bean jakarta.persistence.EntityManager entityManager(EntityManagerFactory factory) {
+            return org.springframework.orm.jpa.SharedEntityManagerCreator.createSharedEntityManager(factory);
+        }
+        @Bean JpaTransactionManager transactionManager(EntityManagerFactory factory) {
+            return new JpaTransactionManager(factory);
+        }
+        @Bean static org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor exceptionTranslation() {
+            return new org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor();
+        }
         @Bean static MethodValidationPostProcessor validation() { return new MethodValidationPostProcessor(); }
     }
 }

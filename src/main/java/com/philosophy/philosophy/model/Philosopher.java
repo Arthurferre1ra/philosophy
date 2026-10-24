@@ -1,115 +1,71 @@
 package com.philosophy.philosophy.model;
 
-import java.util.Locale;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public class Philosopher {
+@Entity
+@Table(name = "filosofo")
+@Getter
+@Setter
+@NoArgsConstructor
+public class Philosopher extends BaseEntity {
 
-    private Long id;
+    @NotBlank
+    @Size(max = 150)
+    @Column(name = "nome", nullable = false, length = 150)
     private String name;
-    private String initials;
-    private String period;
-    private String years;
-    private String school;
-    private String quote;
-    private String color;
+
+    @Column(name = "nome_completo", length = 200)
+    private String fullName;
+
+    @Column(name = "data_nascimento")
+    private LocalDate birthDate;
+
+    @Column(name = "data_falecimento")
+    private LocalDate deathDate;
+
+    @Column(name = "local_nascimento", length = 150)
+    private String birthplace;
+
+    @Column(name = "nacionalidade", length = 100)
+    private String nationality;
+
+    @Column(name = "biografia", columnDefinition = "text")
     private String biography;
 
-    public Philosopher() {
-    }
+    @Column(name = "principais_ideias", columnDefinition = "text")
+    private String quote;
 
-    public Philosopher(Long id, String name, String period, String years, String school, String quote, String color, String biography) {
-        this.id = id;
-        this.name = name;
-        this.initials = buildInitials(name);
-        this.period = period;
-        this.years = years;
-        this.school = school;
-        this.quote = quote;
-        this.color = color;
-        this.biography = biography;
-    }
+    @Column(name = "imagem_url", length = 500)
+    private String imageUrl;
 
-    public static String buildInitials(String name) {
-        if (name == null || name.isBlank()) {
-            return "?";
-        }
-        String[] parts = name.trim().split("\\s+");
-        if (parts.length == 1) {
-            return parts[0].substring(0, 1).toUpperCase(Locale.ROOT);
-        }
-        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase(Locale.ROOT);
-    }
+    @Column(name = "anos_vida", length = 100)
+    private String years;
 
-    public Long getId() {
-        return id;
-    }
+    @Column(name = "cor", length = 20)
+    private String color;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "periodo_id")
+    private Period period;
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-        this.initials = buildInitials(name);
-    }
-
-    public String getInitials() {
-        return initials;
-    }
-
-    public void setInitials(String initials) {
-        this.initials = initials;
-    }
-
-    public String getPeriod() {
-        return period;
-    }
-
-    public void setPeriod(String period) {
-        this.period = period;
-    }
-
-    public String getYears() {
-        return years;
-    }
-
-    public void setYears(String years) {
-        this.years = years;
-    }
-
-    public String getSchool() {
-        return school;
-    }
-
-    public void setSchool(String school) {
-        this.school = school;
-    }
-
-    public String getQuote() {
-        return quote;
-    }
-
-    public void setQuote(String quote) {
-        this.quote = quote;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
-
-    public String getBiography() {
-        return biography;
-    }
-
-    public void setBiography(String biography) {
-        this.biography = biography;
-    }
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "filosofo_escola",
+            joinColumns = @JoinColumn(name = "filosofo_id"),
+            inverseJoinColumns = @JoinColumn(name = "escola_id"))
+    private Set<School> schools = new LinkedHashSet<>();
 }
