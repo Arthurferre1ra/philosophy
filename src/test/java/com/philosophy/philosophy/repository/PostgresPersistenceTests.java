@@ -173,6 +173,7 @@ class PostgresPersistenceTests {
 
     @TestConfiguration(proxyBeanMethods = false)
     @EnableTransactionManagement
+    @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackageClasses = PhilosopherJpaRepository.class)
     @Import({PhilosopherRepository.class, SchoolRepository.class, PeriodRepository.class, PhilosophyLibraryService.class})
     static class PersistenceConfiguration {
         @Bean NamedParameterJdbcTemplate jdbc(DataSource ds) { return new NamedParameterJdbcTemplate(ds); }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Novo filósofo | Atlas da Filosofia</title>
+  <title th:text="${editingId != null ? 'Editar filósofo | Atlas da Filosofia' : 'Novo filósofo | Atlas da Filosofia'}">Novo filósofo | Atlas da Filosofia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
@@ -23,10 +23,10 @@
     </aside>
     <main class="main-content">
       <header class="topbar"><div class="breadcrumb">Biblioteca <span>/</span> Cadastro</div><div class="topbar-actions"><button class="icon-button" aria-label="Notificações" title="Notificações">♧<span class="notification-dot"></span></button><div class="avatar">VF</div></div></header>
-      <section class="page-intro"><p class="eyebrow">FORMULÁRIO</p><h1>Adicionar<br /><em>filósofo.</em></h1><p>Os dados preenchidos aqui são enviados por POST para o Controller e salvos no PostgreSQL.</p></section>
+      <section class="page-intro"><h1><span th:text="${editingId != null ? 'Editar' : 'Adicionar'}">Adicionar</span><br /><em>filósofo.</em></h1><p>Registre o período, a escola e as ideias que fazem parte deste perfil.</p></section>
       <section class="form-panel">
-        <form action="/filosofos" th:action="@{/filosofos}" th:object="${philosopher}" method="post">
-          <div role="alert" th:if="${#fields.hasErrors('*')}">
+        <form action="/filosofos" th:action="${editingId != null} ? @{/filosofos/{id}/editar(id=${editingId})} : @{/filosofos}" th:object="${philosopher}" method="post">
+          <div class="form-errors" role="alert" th:if="${#fields.hasErrors('*')}">
             <p>Revise os campos informados:</p>
             <ul><li th:each="error : ${#fields.errors('*')}" th:text="${error}"></li></ul>
           </div>
@@ -41,7 +41,7 @@
           </div>
           <label>Frase ou ideia principal<textarea th:field="*{quote}" maxlength="5000" required rows="3" placeholder="Uma frase marcante ou breve descrição..."></textarea></label>
           <label>Resumo do perfil<textarea th:field="*{biography}" maxlength="20000" rows="4" placeholder="Contexto histórico, contribuição ou tema central..."></textarea></label>
-          <div class="form-actions"><a class="secondary-button" href="/filosofos" th:href="@{/filosofos}">Cancelar</a><button type="submit" class="primary-button">Salvar filósofo</button></div>
+          <div class="form-actions"><a class="secondary-button" href="/filosofos" th:href="@{/filosofos}">Cancelar</a><button type="submit" class="primary-button" th:text="${editingId != null ? 'Salvar alterações' : 'Salvar filósofo'}">Salvar filósofo</button></div>
         </form>
       </section>
     </main>

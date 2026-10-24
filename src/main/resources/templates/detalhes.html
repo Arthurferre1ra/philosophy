@@ -34,6 +34,20 @@
           <div>Vida<strong th:text="${philosopher.years}">470 - 399 a.C.</strong></div>
           <div>Escola<strong th:text="${philosopher.school}">Filosofia clássica</strong></div>
         </div>
+        <section class="delete-confirmation" th:if="${confirmingDelete == true}" aria-labelledby="delete-heading">
+          <h2 id="delete-heading">Excluir este filósofo?</h2>
+          <p>O perfil e seus vínculos serão removidos. As escolas e os períodos continuam no catálogo.</p>
+          <form th:action="@{/filosofos/{id}/excluir(id=${philosopher.id})}" method="post">
+            <div class="form-actions">
+              <a class="secondary-button" th:href="@{/filosofos/{id}(id=${philosopher.id})}">Cancelar</a>
+              <button class="danger-button" type="submit">Confirmar exclusão</button>
+            </div>
+          </form>
+        </section>
+        <div class="profile-actions" th:unless="${confirmingDelete == true}">
+          <a class="primary-button" th:href="@{/filosofos/{id}/editar(id=${philosopher.id})}">Editar filósofo</a>
+          <a class="secondary-button" th:href="@{/filosofos/{id}/excluir(id=${philosopher.id})}">Excluir filósofo</a>
+        </div>
         <a class="page-back" href="/filosofos" th:href="@{/filosofos}">← Voltar para a listagem</a>
       </section>
     </main>

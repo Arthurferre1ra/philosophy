@@ -2,6 +2,7 @@ package com.philosophy.philosophy.controller;
 
 import com.philosophy.philosophy.dto.PhilosopherForm;
 import com.philosophy.philosophy.exception.PhilosopherNotFoundException;
+import com.philosophy.philosophy.exception.DuplicatePhilosopherException;
 import com.philosophy.philosophy.dto.Period;
 import com.philosophy.philosophy.dto.Philosopher;
 import com.philosophy.philosophy.service.PhilosophyLibraryService;
@@ -123,6 +124,75 @@ class LibraryControllerTests {
     private static Period period() {
         return new Period(UUID.fromString("5a1a4293-3934-443e-a9e3-76e74bf37d31"),
                 "01", "Período Medieval", "Descrição", "476 - 1453", "terracotta");
+    }
+
+    @Test
+    void editFormContainsRawValuesAndCorrectPostAction() throws Exception {
+        when(libraryService.findPhilosopherForm(PHILOSOPHER_ID)).thenReturn(new PhilosopherForm(
+                "Hannah Arendt", "Contemporânea", "Filosofia política", null, "Pensar.", "blue", null));
+        mvc.perform(get("/filosofos/{id}/editar", PHILOSOPHER_ID))
+                .andExpect(status().isOk()).andExpect(view().name("cadastro"))
+                .andExpect(content().string(containsString("value=\"Hannah Arendt\"")))
+                .andExpect(content().string(containsString("action=\"/filosofos/" + PHILOSOPHER_ID + "/editar\"")))
+                .andExpect(content().string(containsString("Salvar alterações")));
+    }
+
+    @Test
+    void validEditUsesPathIdAndRedirectsWithMessage() throws Exception {
+        when(libraryService.updatePhilosopher(any(), any())).thenReturn(philosopher());
+        mvc.perform(post("/filosofos/{id}/editar", PHILOSOPHER_ID)
+                        .param("id", MISSING_ID.toString()).param("name", "Hannah Arendt")
+                        .param("period", "Contemporânea").param("school", "Filosofia política")
+                        .param("quote", "Pensar."))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/filosofos"))
+                .andExpect(flash().attributeExists("message"));
+        verify(libraryService).updatePhilosopher(eq(PHILOSOPHER_ID), any());
+    }
+
+    @Test
+    void invalidEditKeepsEditingActionAndDoesNotSave() throws Exception {
+        mvc.perform(post("/filosofos/{id}/editar", PHILOSOPHER_ID).param("name", ""))
+                .andExpect(status().isBadRequest()).andExpect(view().name("cadastro"))
+                .andExpect(model().attributeHasFieldErrors("philosopher", "name", "period", "school", "quote"))
+                .andExpect(content().string(containsString("action=\"/filosofos/" + PHILOSOPHER_ID + "/editar\"")));
+        verify(libraryService, never()).updatePhilosopher(any(), any());
+    }
+
+    @Test
+    void duplicateBusinessRuleIsShownOnCreateAndEditForms() throws Exception {
+        when(libraryService.addPhilosopher(any())).thenThrow(new DuplicatePhilosopherException());
+        when(libraryService.updatePhilosopher(any(), any())).thenThrow(new DuplicatePhilosopherException());
+        for (String path : new String[]{"/filosofos", "/filosofos/" + PHILOSOPHER_ID + "/editar"}) {
+            mvc.perform(post(path).param("name", "Hannah Arendt").param("period", "Contemporânea")
+                            .param("school", "Filosofia política").param("quote", "Pensar."))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(model().attributeHasFieldErrors("philosopher", "name"))
+                    .andExpect(content().string(containsString("Já existe um filósofo")));
+        }
+    }
+
+    @Test
+    void deleteRequiresPostAndConfirmationGetOnlyReads() throws Exception {
+        when(libraryService.findPhilosopher(PHILOSOPHER_ID)).thenReturn(philosopher());
+        mvc.perform(get("/filosofos/{id}/excluir", PHILOSOPHER_ID))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Confirmar exclusão")))
+                .andExpect(content().string(containsString("method=\"post\"")));
+        verify(libraryService, never()).deletePhilosopher(any());
+        mvc.perform(post("/filosofos/{id}/excluir", PHILOSOPHER_ID))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/filosofos"))
+                .andExpect(flash().attributeExists("message"));
+        verify(libraryService).deletePhilosopher(PHILOSOPHER_ID);
+    }
+
+    @Test
+    void missingRecordsAre404ForEditAndDelete() throws Exception {
+        when(libraryService.findPhilosopherForm(MISSING_ID)).thenThrow(new PhilosopherNotFoundException(MISSING_ID));
+        when(libraryService.findPhilosopher(MISSING_ID)).thenThrow(new PhilosopherNotFoundException(MISSING_ID));
+        doThrow(new PhilosopherNotFoundException(MISSING_ID)).when(libraryService).deletePhilosopher(MISSING_ID);
+        mvc.perform(get("/filosofos/{id}/editar", MISSING_ID)).andExpect(status().isNotFound());
+        mvc.perform(post("/filosofos/{id}/editar", MISSING_ID)).andExpect(status().isNotFound());
+        mvc.perform(get("/filosofos/{id}/excluir", MISSING_ID)).andExpect(status().isNotFound());
+        mvc.perform(post("/filosofos/{id}/excluir", MISSING_ID)).andExpect(status().isNotFound());
     }
 
     private static Philosopher philosopher() {
