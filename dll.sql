@@ -1,6 +1,6 @@
  
 CREATE TABLE periodo_historico (
-   id BIGSERIAL PRIMARY KEY,
+   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  
    nome VARCHAR(100) NOT NULL UNIQUE,
  
@@ -24,7 +24,7 @@ CREATE TABLE periodo_historico (
  
  
 CREATE TABLE escola_pensamento (
-   id BIGSERIAL PRIMARY KEY,
+   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  
    nome VARCHAR(150) NOT NULL UNIQUE,
  
@@ -50,7 +50,7 @@ CREATE TABLE escola_pensamento (
  
  
 CREATE TABLE filosofo (
-   id BIGSERIAL PRIMARY KEY,
+   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  
    nome VARCHAR(150) NOT NULL,
  
@@ -70,7 +70,7 @@ CREATE TABLE filosofo (
  
    imagem_url VARCHAR(500),
  
-   periodo_id BIGINT,
+   periodo_id UUID,
  
    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
  
@@ -92,9 +92,9 @@ CREATE TABLE filosofo (
  
  
 CREATE TABLE filosofo_escola (
-   filosofo_id BIGINT NOT NULL,
+   filosofo_id UUID NOT NULL,
  
-   escola_id BIGINT NOT NULL,
+   escola_id UUID NOT NULL,
  
    PRIMARY KEY (filosofo_id, escola_id),
  
