@@ -72,6 +72,19 @@ mvnw.cmd spring-boot:run
 http://localhost:8080
 ```
 
+## Deploy on Render
+
+The repository includes `render.yaml` and a `Dockerfile` for creating the web service and PostgreSQL database through a Render Blueprint. The Blueprint uses free plans for an initial deployment. Free Render Postgres expires after 30 days and its data may be deleted; choose a paid database plan before applying the Blueprint if the data must persist.
+
+1. Push this repository to a Git provider connected to your Render account.
+2. In Render, choose **New > Blueprint**, connect the repository, and review `render.yaml`.
+3. Review the resources and plans, then apply the Blueprint.
+4. Wait for the first build and open the `onrender.com` URL assigned to the service.
+
+The service starts with the `prod` profile, uses Render's HTTP port, and connects to PostgreSQL over the private network in the same region. Flyway applies database migrations on startup, including the initial library data from migration V2. The Blueprint connects database credentials without storing them in the repository.
+
+For manual setup, use the Docker runtime and build from the `Dockerfile`. Set `SPRING_PROFILES_ACTIVE=prod` and provide `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, and `DB_PASSWORD` from the internal Render PostgreSQL settings. The `/` route is the health check.
+
 ## Principais Rotas
 
 - `GET /` - página inicial/dashboard
@@ -128,7 +141,7 @@ O baseline registra o schema existente na versão 1, preserva as tabelas e aplic
 
 ## Configuração da conexão
 
-As credenciais `postgres/postgres` são valores de desenvolvimento local. Para produção, ative `SPRING_PROFILES_ACTIVE=prod` e forneça `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`, sem valores padrão.
+As credenciais `postgres/postgres` sao valores de desenvolvimento local. Para producao, ative `SPRING_PROFILES_ACTIVE=prod` e forneca `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` e `DB_PASSWORD`, sem valores padrao. `DB_URL` permanece disponivel para a configuracao local.
 
 O pool aceita ajustes por `DB_POOL_SIZE` (10), `DB_POOL_MIN_IDLE` (2) e `DB_CONNECTION_TIMEOUT` (10000 ms). O driver PostgreSQL é detectado pela URL JDBC.
 

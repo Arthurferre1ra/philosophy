@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: atlas-da-filosofia
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_HOST
+        fromDatabase:
+          name: atlas-da-filosofia-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: atlas-da-filosofia-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: atlas-da-filosofia-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: atlas-da-filosofia-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: atlas-da-filosofia-db
+          property: password
+
+databases:
+  - name: atlas-da-filosofia-db
+    plan: free
+    databaseName: philosophy
+    user: philosophy
